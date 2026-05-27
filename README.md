@@ -8,7 +8,7 @@ Bem-vindo ao **GAT365**, um Servidor do protocolo MCP (Model Context Protocol) f
 
 Este repositório é um fork modificado e otimizado baseado no projeto original excelente criado por **[Softeria/ms-365-mcp-server](https://github.com/Softeria/ms-365-mcp-server)**. 
 
-A fundação do código base e a lógica de comunicação via Microsoft Graph pertencem ao repositório original. Nós evoluímos essa fundação adicionando uma suíte robusta de funcionalidades Enterprise (via Protocolo Antigravity), como:
+A fundação do código base e a lógica de comunicação via Microsoft Graph pertencem ao repositório original. Nós evoluímos essa fundação adicionando uma suíte robusta de funcionalidades Enterprise, como:
 
 - 🏗️  **Migração do Storage para o Redis:** O Cache de Tokens do MSAL agora vive centralizado na nuvem/banco para suportar múltiplos workers em nuvem, não sofrendo mais de locks por disco local.
 - 🚦  **Rastreabilidade Ativa no BullMQ:** Monitoramento ponta a ponta na fila. É possível ver exatamente qual usuário Microsoft engatilhou qual ferramenta do LLM via Painel de Auditoria em tempo real.
