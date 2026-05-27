@@ -3,7 +3,7 @@ import fs, { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import logger from './logger.js';
-
+import { redisConnection } from './redis-settings.js';
 export type TokenCacheStorageKey = 'token-cache' | 'selected-account';
 
 export interface TokenCacheStorage {
@@ -211,6 +211,46 @@ export class DefaultTokenCacheStorage implements TokenCacheStorage {
     }
   }
 }
+
+export class RedisTokenCacheStorage implements TokenCacheStorage {
+  readonly description = 'redis storage';
+  readonly failClosed = false;
+
+  private redisKeyForKey(key: TokenCacheStorageKey): string {
+    assertValidKey(key);
+    return key === 'token-cache' ? 'mcp:auth:token_cache' : 'mcp:auth:selected_account';
+  }
+
+  async load(key: TokenCacheStorageKey): Promise<string | undefined> {
+    assertValidKey(key);
+    try {
+      const raw = await redisConnection.get(this.redisKeyForKey(key));
+      return raw ? raw : undefined;
+    } catch (error) {
+      logger.warn(`Redis load failed for ${key}: ${(error as Error).message}`);
+      return undefined;
+    }
+  }
+
+  async save(key: TokenCacheStorageKey, value: string): Promise<void> {
+    assertValidKey(key);
+    try {
+      await redisConnection.set(this.redisKeyForKey(key), value);
+    } catch (error) {
+      logger.warn(`Redis save failed for ${key}: ${(error as Error).message}`);
+    }
+  }
+
+  async delete(key: TokenCacheStorageKey): Promise<void> {
+    assertValidKey(key);
+    try {
+      await redisConnection.del(this.redisKeyForKey(key));
+    } catch (error) {
+      logger.warn(`Redis deletion failed for ${key}: ${(error as Error).message}`);
+    }
+  }
+}
+
 
 interface CommandResult {
   exitCode: number | null;
@@ -425,7 +465,7 @@ export async function createTokenCacheStorage(
       parseTimeoutMs(process.env[AUTH_CACHE_COMMAND_TIMEOUT_ENV])
     );
   } else {
-    storage = new DefaultTokenCacheStorage();
+    storage = new RedisTokenCacheStorage();
   }
 
   if (options.logProvider) {

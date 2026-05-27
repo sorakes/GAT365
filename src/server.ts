@@ -29,6 +29,7 @@ import { requestContext } from './request-context.js';
 import { dumpError } from './crash-logging.js';
 import crypto from 'node:crypto';
 import OboClient from './obo-client.js';
+import { initializeWorker } from './mcp-queue.js';
 
 /**
  * Parse HTTP option into host and port components.
@@ -191,6 +192,7 @@ class MicrosoftGraphServer {
     }
 
     logger.info('Microsoft 365 MCP Server starting...');
+    await initializeWorker();
 
     // Debug: Check if secrets are loaded
     logger.info('Secrets Check:', {

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ms365-mcp-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ms365-mcp-panel
+    ports:
+      # Expõe a porta 3050 para o Painel Web (Next.js)
+      - "3050:3000"
+      # Expõe a porta 6379 para que o seu LLM local (rodando no Host via STDIO) acesse o Redis
+      - "6379:6379"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

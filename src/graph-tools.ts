@@ -22,6 +22,8 @@ export interface DiscoverySearchIndex {
   nameTokens: Map<string, Set<string>>;
 }
 import { describeToolSchema, describeUtilityToolSchema } from './lib/tool-schema.js';
+import { isToolAllowed } from './redis-settings.js';
+import { enqueueToolCall, registerToolExecutor } from './mcp-queue.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -269,6 +271,8 @@ function registerUtilityToolWithMcp(
   utility: UtilityTool,
   ctx: UtilityToolContext
 ): void {
+  registerToolExecutor(utility.name, async (params) => utility.execute(params, ctx));
+
   server.tool(
     utility.name,
     utility.description,
@@ -278,7 +282,26 @@ function registerUtilityToolWithMcp(
       readOnlyHint: utility.readOnlyHint ?? true,
       openWorldHint: utility.openWorldHint ?? true,
     },
-    async (params) => utility.execute(params, ctx)
+    async (params) => {
+      const allowed = await isToolAllowed(utility.name);
+      if (!allowed) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Acesso Negado: A ferramenta '${utility.name}' foi temporariamente desabilitada pelo Administrador no Painel de Controle.`
+          }],
+          isError: true,
+        };
+      }
+      try {
+        return await enqueueToolCall(utility.name, params);
+      } catch (e) {
+        return {
+          content: [{ type: 'text', text: `Erro na fila de execução: ${(e as Error).message}` }],
+          isError: true
+        };
+      }
+    }
   );
 }
 
@@ -897,6 +920,10 @@ export function registerGraphTools(
     }
 
     try {
+      registerToolExecutor(tool.alias, async (params) => {
+        return await executeGraphTool(tool, endpointConfig, graphClient, params, authManager);
+      });
+
       server.tool(
         tool.alias,
         toolDescription,
@@ -907,7 +934,26 @@ export function registerGraphTools(
           destructiveHint: ['POST', 'PATCH', 'DELETE'].includes(tool.method.toUpperCase()),
           openWorldHint: true, // All tools call Microsoft Graph API
         },
-        async (params) => executeGraphTool(tool, endpointConfig, graphClient, params, authManager)
+        async (params) => {
+          const allowed = await isToolAllowed(tool.alias);
+          if (!allowed) {
+            return {
+              content: [{
+                type: 'text',
+                text: `Acesso Negado: A ferramenta '${tool.alias}' foi temporariamente desabilitada pelo Administrador no Painel de Controle.`
+              }],
+              isError: true,
+            };
+          }
+          try {
+            return await enqueueToolCall(tool.alias, params);
+          } catch (e) {
+            return {
+              content: [{ type: 'text', text: `Erro na fila de execução: ${(e as Error).message}` }],
+              isError: true
+            };
+          }
+        }
       );
       registeredCount++;
     } catch (error) {
