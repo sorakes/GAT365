@@ -12,8 +12,6 @@ A fundação do código base e a lógica de comunicação via Microsoft Graph pe
 
 - 🏗️  **Migração do Storage para o Redis:** O Cache de Tokens do MSAL agora vive centralizado na nuvem/banco para suportar múltiplos workers em nuvem, não sofrendo mais de locks por disco local.
 - 🚦  **Rastreabilidade Ativa no BullMQ:** Monitoramento ponta a ponta na fila. É possível ver exatamente qual usuário Microsoft engatilhou qual ferramenta do LLM via Painel de Auditoria em tempo real.
-- 🔐  **Gerenciamento Dinâmico de Contas:** Uma nova aba no Painel Next.js dedicada para forçar o logout de contas específicas (limpeza de sessões ativas).
-- 🐳  **Orquestração em Contêineres Limpa:** Introdução do `docker-compose.yml` isolando as portas de forma flexível e deixando o ambiente produtivo.
 
 ## 🛠️ Como usar
 
